@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat-App</title>
+</head>
+<body>
+    <h1>Chat-app for messages</h1>
+    <div id="loginForm">
+        <h2>Login</h2>
+        <input type="text" id="username" placeholder="Username">
+        <input type="password" id="password" placeholder="Password">
+        <button id="loginBtn">Log In</button>
+    </div>
+
+    <!-- Chat interface hidden by default -->
+    <div id="chatBox" style="display: none;">
+        <!-- Message input and recipient select -->
+        <input type="text" id="message" placeholder="Enter Message">
+        <select id="recipientSelect">
+            <option value="">Select a recipient</option>
+        </select>
+        <button id="sendBtn">Send</button>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const userSocketIds = {};
+    
+        const socket = io();
+    
+        socket.on('userLoggedIn', (data) => {
+            userSocketIds[data.username] = socket.id;
+        });
+    
+     // ... rest of your code
+    </script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+       
+        const loginForm = document.getElementById("loginForm");
+        const chatBox = document.getElementById("chatBox");
+        const sendBtn = document.getElementById("sendBtn");
+        const messageInput = document.getElementById("message");
+        const usernameInput = document.getElementById("username");
+        const passwordInput = document.getElementById("password");
+        let userToken = null;
+        let selectedRecipient = null;
+        
+        socket.on('message', (message) => {
+            console.log(message);
+        });
+        
+        document.addEventListener("DOMContentLoaded", function() {
+    console.log("DOM content loaded");
+    const recipientSelect = document.getElementById("recipientSelect");
+
+    // Function to send a message to the selected user
+    /*/const sendMessage = (userId) => {
+        const message = messageInput.value;
+        if (userId && message) {
+            socket.emit('send message', { recipientId: userId, message, token: userToken });
+        }
+        messageInput.value = '';
+        console.log(`Sending a message to user with ID: ${userId}`);
+    };
+/*/
+    fetch('/api/auth/getRecipient')
+        .then((response) => response.json())
+        .then((data) => {
+            console.log(data); // Add this line to check the data received
+            if (data && data.users) {
+                data.users.forEach((user) => {
+                    const option = document.createElement('option');
+                    option.value = user.id; // Set the value to the user's ID
+                    option.textContent = user.username;
+                    recipientSelect.appendChild(option);
+                });
+            } else {
+                console.error('No users found in the response');
+            }
+        })
+        .catch((error) => {
+            console.error('Error fetching users:', error);
+        });
+});
+
+
+
+
+        const loginBtn = document.getElementById("loginBtn");
+        loginBtn.addEventListener("click", () => {
+            const username = usernameInput.value;
+            const password = passwordInput.value;
+
+            fetch('/api/auth/login', {
+                method: 'POST',
+                headers: {
+                    'content-Type': 'application/json',
+                },
+                body: JSON.stringify({ username, password }),
+            }).then((response) => response.json()).then((data) => {
+                if (data.token) {
+                    userToken = data.token;
+                    loginForm.style.display = "none";
+                    chatBox.style.display = "block";
+                    socket.emit("userLoggedIn", username);
+                    console.log("welcome ",username);
+                } else {
+                    console.log("Authentication failed");
+                }
+            });
+        });
+
+        sendBtn.addEventListener("click", (e) => {
+            const recipientId = recipientSelect.value;  
+            const message = messageInput.value;
+
+            if (!recipientId ) {
+                console.log('Please select a receipt.');
+                
+            } 
+            else if(!message){
+                console.log('Please enter a message');
+            }
+            else {
+                   // const socket=io();
+                const selectedRecipientSocketId = userSocketIds[recipientId];
+                if (selectedRecipientSocketId) {
+          // Use socket.to(socketId).emit() to send the message only to the selected recipient
+        //  socket.to(selectedRecipientSocketId).emit('private message', { message, token: userToken });
+        socket.emit('private message', { recipient: recipientId, message, token: userToken });
+        console.log(`Sending a private message to user: ${recipientId}`);
+          // You can also save the message to the database or perform other actions here
+       //   console.log(`Sending a private message to user: ${recipientId}`);
+      } else {
+          console.log('Selected recipient is not connected.');
+      }
+                 // Use socket.to(socketId).emit() to send the message only to the selected recipient
+                 //socket.emit('private message', { message, token: userToken, recipient: recipientId });//, recipient: selectedRecipient.id
+
+// You can also save the message to the database or perform other actions here
+                 //console.log(`Sending a private message to user: ${recipientId}`);
+            }
+        });
+    </script>
+</body>
+</html> 
